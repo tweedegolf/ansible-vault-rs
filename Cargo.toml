@@ -4,6 +4,8 @@ description = "decrypt ansible vault 1.1 files"
 version = "0.1.0"
 authors = ["Wouter Geraedts <wouter@tweedegolf.com>"]
 edition = "2018"
+license = "MIT"
+repository = "https://github.com/tweedegolf/ansible-vault-rs"
 
 [dependencies]
 base16 = "0.1.1"
