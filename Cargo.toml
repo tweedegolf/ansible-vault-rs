@@ -1,0 +1,13 @@
+[package]
+name = "ansible-vault"
+description = "decrypt ansible vault 1.1 files"
+version = "0.1.0"
+authors = ["Wouter Geraedts <wouter@tweedegolf.com>"]
+edition = "2018"
+
+[dependencies]
+base16 = "0.1.1"
+base64 = "0.10"
+aes-ctr = "0.3.0"
+rust-crypto = "0.2.36"
+pkcs7 = "1.0.0"
