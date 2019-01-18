@@ -88,16 +88,12 @@ fn read_hex_lines<T: std::io::BufRead>(lines: std::io::Lines<T>) -> Result<Vec<u
 
 /// See https://github.com/ansible/ansible/blob/devel/lib/ansible/parsing/vault/__init__.py#L1286.
 fn verify_vault(key: &[u8], ciphertext: &[u8], crypted_hmac: &[u8]) -> bool {
-    use crypto::mac::Mac;
+    use hmac::Mac;
 
-    let digest = crypto::sha2::Sha256::new();
-    let mut hmac = crypto::hmac::Hmac::new(digest, key);
+    let mut hmac = hmac::Hmac::<sha2::Sha256>::new_varkey(key).unwrap();
     hmac.input(&ciphertext);
 
-    let mut our_cryped_hmac = vec![0; hmac.output_bytes()];
-    hmac.raw_result(&mut our_cryped_hmac);
-
-    our_cryped_hmac.as_slice().eq(crypted_hmac) // Constant time equivalence is not required for this use case.
+    hmac.result().code().as_slice().eq(crypted_hmac) // Constant time equivalence is not required for this use case.
 }
 
 pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
@@ -118,10 +114,8 @@ pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
     let hmac_verify = base16::decode(&lines.next().ok_or(Error::InvalidFormat)?)?;
     let mut ciphertext = base16::decode(&lines.next().ok_or(Error::InvalidFormat)?)?;
 
-    let digest = crypto::sha2::Sha256::new();
-    let mut hmac = crypto::hmac::Hmac::new(digest, key.as_bytes());
     let mut hmac_buffer = [0; 80];
-    crypto::pbkdf2::pbkdf2(&mut hmac, &salt, 10000, &mut hmac_buffer);
+    pbkdf2::pbkdf2::<hmac::Hmac<sha2::Sha256>>(key.as_bytes(), &salt, 10000, &mut hmac_buffer);
 
     let key1 = &hmac_buffer[0..32];
     let key2 = &hmac_buffer[32..64];
