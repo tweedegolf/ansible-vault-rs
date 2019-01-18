@@ -68,6 +68,12 @@ impl From<base16::DecodeError> for Error {
     }
 }
 
+impl From<hmac::crypto_mac::InvalidKeyLength> for Error {
+    fn from(_error: hmac::crypto_mac::InvalidKeyLength) -> Self {
+        Error::InvalidFormat
+    }
+}
+
 fn read_hex_lines<T: std::io::BufRead>(lines: std::io::Lines<T>) -> Result<Vec<u8>> {
     let mut buffer: Vec<u8> = vec![];
 
@@ -87,13 +93,13 @@ fn read_hex_lines<T: std::io::BufRead>(lines: std::io::Lines<T>) -> Result<Vec<u
 }
 
 /// See https://github.com/ansible/ansible/blob/devel/lib/ansible/parsing/vault/__init__.py#L1286.
-fn verify_vault(key: &[u8], ciphertext: &[u8], crypted_hmac: &[u8]) -> bool {
+fn verify_vault(key: &[u8], ciphertext: &[u8], crypted_hmac: &[u8]) -> Result<bool> {
     use hmac::Mac;
 
-    let mut hmac = hmac::Hmac::<sha2::Sha256>::new_varkey(key).unwrap();
+    let mut hmac = hmac::Hmac::<sha2::Sha256>::new_varkey(key)?;
     hmac.input(&ciphertext);
 
-    hmac.result().code().as_slice().eq(crypted_hmac) // Constant time equivalence is not required for this use case.
+    Ok(hmac.result().code().as_slice().eq(crypted_hmac)) // Constant time equivalence is not required for this use case.
 }
 
 pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
@@ -121,7 +127,7 @@ pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
     let key2 = &hmac_buffer[32..64];
     let iv = &hmac_buffer[64..80];
 
-    if !verify_vault(key2, &ciphertext, &hmac_verify) {
+    if !verify_vault(key2, &ciphertext, &hmac_verify)? {
         return Err(Error::IncorrectSecret);
     }
 

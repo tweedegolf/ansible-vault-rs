@@ -1,7 +1,7 @@
 [package]
 name = "ansible-vault"
 description = "decrypt ansible vault 1.1 files"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Wouter Geraedts <wouter@tweedegolf.com>"]
 edition = "2018"
 license = "MIT"
@@ -9,7 +9,6 @@ repository = "https://github.com/tweedegolf/ansible-vault-rs"
 
 [dependencies]
 base16 = "0.1.1"
-base64 = "0.10"
 hmac = "0.7.0"
 sha2 = "0.8.0"
 pbkdf2 = "0.3.0"
