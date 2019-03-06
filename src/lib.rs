@@ -104,6 +104,7 @@ fn verify_vault(key: &[u8], ciphertext: &[u8], crypted_hmac: &[u8]) -> Result<bo
 
 pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
     use std::io::BufRead;
+    use block_padding::{Padding, Pkcs7};
 
     let mut lines = std::io::BufReader::new(input).lines();
     let first: String = lines.next().ok_or(Error::NotAVault)??;
@@ -135,7 +136,10 @@ pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
     let mut cipher = aes_ctr::Aes256Ctr::new_var(key1, iv).map_err(|_err| Error::InvalidFormat)?;
 
     cipher.apply_keystream(&mut ciphertext);
-    pkcs7::un_pad(&mut ciphertext);
+    let n = Pkcs7::unpad(&ciphertext)
+        .map_err(|_| Error::InvalidFormat)?
+        .len();
+    ciphertext.truncate(n);
 
     Ok(ciphertext)
 }
