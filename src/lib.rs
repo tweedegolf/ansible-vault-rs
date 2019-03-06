@@ -1,3 +1,14 @@
+//! Decrypting of Ansible vault 1.1 files and streams.
+//!
+//! This crate provides the `read_vault` function which will decrypt an
+//! ansible vault and yield a byte buffer of the plaintext.
+//! It detects incorrect vault secrets and incorrectly formatted vaults,
+//! and yields the appropriate errors.
+
+/// The error type for decrypting Ansible vaults.
+///
+/// Errors either originate from failing I/O operations, or from
+/// passing incorrect (formatted) files, streams or secrets.
 #[derive(Debug)]
 pub enum Error {
     IoError(std::io::Error),
@@ -6,6 +17,7 @@ pub enum Error {
     IncorrectSecret,
 }
 
+/// A specialized `Result` type for decrypting Ansible vaults.
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl std::cmp::PartialEq for Error {
@@ -102,9 +114,12 @@ fn verify_vault(key: &[u8], ciphertext: &[u8], crypted_hmac: &[u8]) -> Result<bo
     Ok(hmac.result().code().as_slice().eq(crypted_hmac)) // Constant time equivalence is not required for this use case.
 }
 
+/// Decrypt an ansible vault stream using a key.
+///
+/// When succesful, yields a plaintext byte buffer.
 pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
-    use std::io::BufRead;
     use block_padding::{Padding, Pkcs7};
+    use std::io::BufRead;
 
     let mut lines = std::io::BufReader::new(input).lines();
     let first: String = lines.next().ok_or(Error::NotAVault)??;
@@ -144,6 +159,9 @@ pub fn read_vault<T: std::io::Read>(input: T, key: &str) -> Result<Vec<u8>> {
     Ok(ciphertext)
 }
 
+/// Decrypt an ansible vault file using a key.
+///
+/// When succesful, yields a plaintext byte buffer.
 pub fn read_vault_from_file(path: &std::path::Path, key: &str) -> Result<Vec<u8>> {
     let f = std::fs::File::open(path)?;
     read_vault(f, key)
