@@ -1,0 +1,119 @@
+use hmac::crypto_mac::MacError;
+use std::error::Error;
+use std::fmt;
+
+/// A specialized `Result` type for decrypting Ansible vaults.
+pub type Result<T> = std::result::Result<T, VaultError>;
+
+/// The error type for decrypting Ansible vaults.
+///
+/// Errors either originate from failing I/O operations, or from
+/// passing incorrect (formatted) files, streams or secrets.
+#[derive(Debug)]
+pub struct VaultError {
+    pub kind: ErrorKind,
+    pub message: String,
+}
+
+#[derive(Debug)]
+pub enum ErrorKind {
+    Error,
+    IoError,
+    NotAVault,
+    InvalidFormat,
+    IncorrectSecret,
+}
+
+fn kind_message(kind: &ErrorKind) -> &str {
+    match kind {
+        ErrorKind::Error => "Error !",
+        ErrorKind::IoError => "Io error",
+        ErrorKind::NotAVault => "Input is not a vault",
+        ErrorKind::InvalidFormat => "Invalid data format : vault is incorrect",
+        ErrorKind::IncorrectSecret => "Invalid secret",
+    }
+}
+
+impl VaultError {
+    pub fn new(kind: ErrorKind, message: &str) -> Self {
+        VaultError {
+            kind,
+            message: message.to_string(),
+        }
+    }
+
+    pub fn from_kind(kind: ErrorKind) -> Self {
+        let msg = kind_message(&kind).to_string();
+
+        VaultError { kind, message: msg }
+    }
+
+    pub fn from_string(message: &str) -> Self {
+        VaultError {
+            kind: ErrorKind::Error,
+            message: message.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for VaultError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl Error for VaultError {
+    fn description(&self) -> &str {
+        &self.message
+    }
+}
+
+impl From<&str> for VaultError {
+    fn from(s: &str) -> Self {
+        VaultError::from_string(s)
+    }
+}
+
+impl std::cmp::PartialEq for VaultError {
+    fn eq(&self, other: &VaultError) -> bool {
+        let (self_kind, other_kind) = (&self.kind, &other.kind);
+        matches!(
+            (self_kind, other_kind),
+            (ErrorKind::NotAVault, ErrorKind::NotAVault)
+                | (ErrorKind::IncorrectSecret, ErrorKind::IncorrectSecret)
+                | (ErrorKind::InvalidFormat, ErrorKind::InvalidFormat)
+                | (ErrorKind::IoError, ErrorKind::IoError)
+                | (ErrorKind::Error, ErrorKind::Error)
+        )
+    }
+}
+
+impl From<std::io::Error> for VaultError {
+    fn from(error: std::io::Error) -> Self {
+        VaultError::new(ErrorKind::IoError, &error.to_string())
+    }
+}
+
+impl From<std::string::FromUtf8Error> for VaultError {
+    fn from(error: std::string::FromUtf8Error) -> Self {
+        VaultError::new(ErrorKind::InvalidFormat, &error.to_string())
+    }
+}
+
+impl From<hex::FromHexError> for VaultError {
+    fn from(error: hex::FromHexError) -> Self {
+        VaultError::new(ErrorKind::InvalidFormat, &error.to_string())
+    }
+}
+
+impl From<hmac::crypto_mac::InvalidKeyLength> for VaultError {
+    fn from(error: hmac::crypto_mac::InvalidKeyLength) -> Self {
+        VaultError::new(ErrorKind::InvalidFormat, &error.to_string())
+    }
+}
+
+impl From<MacError> for VaultError {
+    fn from(error: MacError) -> Self {
+        VaultError::new(ErrorKind::IncorrectSecret, &error.to_string())
+    }
+}
