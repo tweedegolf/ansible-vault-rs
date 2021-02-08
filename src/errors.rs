@@ -1,6 +1,8 @@
 use hmac::crypto_mac::MacError;
 use std::error::Error;
 use std::fmt;
+use block_padding::PadError;
+use aes_ctr::cipher::stream::InvalidKeyNonceLength;
 
 /// A specialized `Result` type for decrypting Ansible vaults.
 pub type Result<T> = std::result::Result<T, VaultError>;
@@ -115,5 +117,17 @@ impl From<hmac::crypto_mac::InvalidKeyLength> for VaultError {
 impl From<MacError> for VaultError {
     fn from(error: MacError) -> Self {
         VaultError::new(ErrorKind::IncorrectSecret, &error.to_string())
+    }
+}
+
+impl From<PadError> for VaultError {
+    fn from(_error: PadError) -> Self {
+        VaultError::new(ErrorKind::InvalidFormat, "Padding error")
+    }
+}
+
+impl From<InvalidKeyNonceLength> for VaultError {
+    fn from(error: InvalidKeyNonceLength) -> Self {
+        VaultError::new(ErrorKind::InvalidFormat, &error.to_string())
     }
 }
