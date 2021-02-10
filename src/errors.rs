@@ -1,16 +1,13 @@
 use hmac::crypto_mac::MacError;
 use std::error::Error;
 use std::fmt;
-use block_padding::PadError;
+use block_padding::{PadError, UnpadError};
 use aes_ctr::cipher::stream::InvalidKeyNonceLength;
 
-/// A specialized `Result` type for decrypting Ansible vaults.
+/// A specialized `Result` type for decrypting Ansible vaults results
 pub type Result<T> = std::result::Result<T, VaultError>;
 
 /// The error type for decrypting Ansible vaults.
-///
-/// Errors either originate from failing I/O operations, or from
-/// passing incorrect (formatted) files, streams or secrets.
 #[derive(Debug)]
 pub struct VaultError {
     pub kind: ErrorKind,
@@ -122,6 +119,12 @@ impl From<MacError> for VaultError {
 
 impl From<PadError> for VaultError {
     fn from(_error: PadError) -> Self {
+        VaultError::new(ErrorKind::InvalidFormat, "Padding error")
+    }
+}
+
+impl From<UnpadError> for VaultError {
+    fn from(_error: UnpadError) -> Self {
         VaultError::new(ErrorKind::InvalidFormat, "Padding error")
     }
 }
