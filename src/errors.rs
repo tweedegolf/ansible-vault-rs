@@ -14,7 +14,7 @@ pub struct VaultError {
     pub message: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ErrorKind {
     Error,
     IoError,
@@ -75,15 +75,7 @@ impl From<&str> for VaultError {
 
 impl std::cmp::PartialEq for VaultError {
     fn eq(&self, other: &VaultError) -> bool {
-        let (self_kind, other_kind) = (&self.kind, &other.kind);
-        matches!(
-            (self_kind, other_kind),
-            (ErrorKind::NotAVault, ErrorKind::NotAVault)
-                | (ErrorKind::IncorrectSecret, ErrorKind::IncorrectSecret)
-                | (ErrorKind::InvalidFormat, ErrorKind::InvalidFormat)
-                | (ErrorKind::IoError, ErrorKind::IoError)
-                | (ErrorKind::Error, ErrorKind::Error)
-        )
+        self.kind.eq(&other.kind)
     }
 }
 
