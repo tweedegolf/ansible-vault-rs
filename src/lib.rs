@@ -1,9 +1,9 @@
 //! Encrypt and decrypt Ansible Vault files
 //!
-//! his library provides methods to encrypt and decrypt ansible vault data, in 1.1 format
+//! This library provides methods to encrypt and decrypt ansible vault data, in 1.1 format
 //! It exposes six methods:
 //! * encrypt : Encrypt the input to a string without header `$ANSIBLE_VAULT;1.1;AES256` nor indentation,
-//! * encrypt_vault : Encrypt the input, and format like ansible (with header and indetation),
+//! * encrypt_vault : Encrypt the input, and format like ansible (with header and indentation),
 //! * encrypt_vault_from_file : Encrypt the given file (wrapper for `encrypt_vault`)
 //! * decrypt : Decrypt a message string without header nor indentation
 //! * decrypt_vault : Decrypt a vault intput (with header and optionally indentation)
@@ -22,6 +22,7 @@
 //! ```
 mod errors;
 
+pub use crate::errors::VaultError;
 use crate::errors::*;
 use aes_ctr::cipher::{NewStreamCipher, SyncStreamCipher};
 use aes_ctr::Aes256Ctr;
