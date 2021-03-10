@@ -28,15 +28,15 @@ use aes_ctr::cipher::{NewStreamCipher, SyncStreamCipher};
 use aes_ctr::Aes256Ctr;
 use block_padding::{Padding, Pkcs7};
 use hmac::{Hmac, Mac, NewMac};
-use sha2::Sha256;
-use std::io::{BufRead, Read};
 use pbkdf2::pbkdf2;
 use rand::Rng;
-use std::path::Path;
+use sha2::Sha256;
 use std::fs::File;
+use std::io::{BufRead, Read};
+use std::path::Path;
 
 const VAULT_1_1_PREFIX: &str = "$ANSIBLE_VAULT;1.1;AES256";
-const AES_BLOCK_SIZE: usize = 16;  // size in bytes
+const AES_BLOCK_SIZE: usize = 16; // size in bytes
 const KEY_SIZE: usize = 32;
 
 type HmacSha256 = Hmac<Sha256>;
@@ -49,16 +49,19 @@ fn verify_vault(key: &[u8], ciphertext: &[u8], crypted_hmac: &[u8]) -> Result<()
 }
 
 /// Generate derived keys and initialization vector from given key and salt
-fn generate_derived_key(key: &str, salt: &[u8]) -> ([u8;KEY_SIZE], [u8;KEY_SIZE], [u8;AES_BLOCK_SIZE]) {
-    let mut hmac_buffer = [0; 2*KEY_SIZE+AES_BLOCK_SIZE];
-    pbkdf2::<HmacSha256>(key.as_bytes(),salt, 10000, &mut hmac_buffer);
+fn generate_derived_key(
+    key: &str,
+    salt: &[u8],
+) -> ([u8; KEY_SIZE], [u8; KEY_SIZE], [u8; AES_BLOCK_SIZE]) {
+    let mut hmac_buffer = [0; 2 * KEY_SIZE + AES_BLOCK_SIZE];
+    pbkdf2::<HmacSha256>(key.as_bytes(), salt, 10000, &mut hmac_buffer);
 
-    let mut key1 =[0u8; KEY_SIZE];
-    let mut key2 =[0u8; KEY_SIZE];
-    let mut iv =[0u8; AES_BLOCK_SIZE];
+    let mut key1 = [0u8; KEY_SIZE];
+    let mut key2 = [0u8; KEY_SIZE];
+    let mut iv = [0u8; AES_BLOCK_SIZE];
     key1.copy_from_slice(&hmac_buffer[0..KEY_SIZE]);
-    key2.copy_from_slice(&hmac_buffer[KEY_SIZE..2*KEY_SIZE]);
-    iv.copy_from_slice(&hmac_buffer[2*KEY_SIZE..2*KEY_SIZE+AES_BLOCK_SIZE]);
+    key2.copy_from_slice(&hmac_buffer[KEY_SIZE..2 * KEY_SIZE]);
+    iv.copy_from_slice(&hmac_buffer[2 * KEY_SIZE..2 * KEY_SIZE + AES_BLOCK_SIZE]);
 
     (key1, key2, iv)
 }
@@ -133,7 +136,7 @@ pub fn decrypt<T: Read>(mut input: T, key: &str) -> Result<Vec<u8>> {
 /// # Arguments:
 /// * `input`: a stream of encrypted message with ansible-vault header
 /// * `key`: the key to decrypt the message
-pub fn decrypt_vault<T:Read>(input: T, key: &str) -> Result<Vec<u8>> {
+pub fn decrypt_vault<T: Read>(input: T, key: &str) -> Result<Vec<u8>> {
     let mut lines = std::io::BufReader::new(input).lines();
     let first: String = lines
         .next()
@@ -179,16 +182,16 @@ pub fn decrypt_vault_from_file<P: AsRef<Path>>(path: P, key: &str) -> Result<Vec
 /// # Arguments:
 /// * `input`: a stream to the data to encrypt
 /// * `key`: the key to encrypt the message
-pub fn encrypt_vault<T:Read>(input: T, key: &str) -> Result<String> {
+pub fn encrypt_vault<T: Read>(input: T, key: &str) -> Result<String> {
     let line_length = 80;
     let ciphertext = encrypt(input, key)?;
     let mut buffer = Vec::new();
     for chunk in ciphertext.into_bytes().chunks(line_length) {
-        let mut line = ["      ".as_bytes(),chunk,"\n".as_bytes()].concat();
+        let mut line = ["      ".as_bytes(), chunk, "\n".as_bytes()].concat();
         buffer.append(&mut line);
     }
 
-    let vault_text=format!{"{}\n{}", VAULT_1_1_PREFIX, String::from_utf8(buffer)?};
+    let vault_text = format! {"{}\n{}", VAULT_1_1_PREFIX, String::from_utf8(buffer)?};
 
     Ok(vault_text)
 }
@@ -211,7 +214,7 @@ pub fn encrypt<T: Read>(mut input: T, key: &str) -> Result<String> {
     input.read_to_end(&mut buffer)?;
     let pos = buffer.len();
     let pad_len = AES_BLOCK_SIZE - (pos % AES_BLOCK_SIZE);
-    buffer.resize(pos+pad_len, 0);
+    buffer.resize(pos + pad_len, 0);
     let mut block_buffer = Pkcs7::pad(buffer.as_mut_slice(), pos, AES_BLOCK_SIZE)?;
 
     // Derive cryptographic keys
@@ -229,7 +232,12 @@ pub fn encrypt<T: Read>(mut input: T, key: &str) -> Result<String> {
     let b_hmac = result.into_bytes();
 
     // Format data
-    let ciphertext = format!("{}\n{}\n{}",hex::encode(salt), hex::encode(b_hmac), hex::encode(block_buffer));
+    let ciphertext = format!(
+        "{}\n{}\n{}",
+        hex::encode(salt),
+        hex::encode(b_hmac),
+        hex::encode(block_buffer)
+    );
 
     Ok(hex::encode(ciphertext))
 }
@@ -273,12 +281,9 @@ mod tests {
     #[test]
     fn test_encrypt() {
         let lipsum = fs::read_to_string(LIPSUM_PATH).unwrap();
-        let encoded = crate::encrypt_vault_from_file(LIPSUM_PATH,LIPSUM_SECRET).unwrap();
+        let encoded = crate::encrypt_vault_from_file(LIPSUM_PATH, LIPSUM_SECRET).unwrap();
         let decoded = crate::decrypt_vault(encoded.as_bytes(), LIPSUM_SECRET).unwrap();
         let decoded_str = String::from_utf8(decoded).unwrap();
         assert_eq!(lipsum, decoded_str);
     }
-
-
-
 }

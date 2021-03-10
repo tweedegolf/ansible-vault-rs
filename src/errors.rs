@@ -1,8 +1,8 @@
+use aes_ctr::cipher::stream::InvalidKeyNonceLength;
+use block_padding::{PadError, UnpadError};
 use hmac::crypto_mac::MacError;
 use std::error::Error;
 use std::fmt;
-use block_padding::{PadError, UnpadError};
-use aes_ctr::cipher::stream::InvalidKeyNonceLength;
 
 /// A specialized `Result` type for decrypting Ansible vaults results
 pub type Result<T> = std::result::Result<T, VaultError>;
