@@ -141,15 +141,16 @@ pub fn decrypt_vault<T: Read>(input: T, key: &str) -> Result<Vec<u8>> {
     let first: String = lines
         .next()
         .ok_or_else(|| VaultError::from_kind(ErrorKind::NotAVault))??;
+
+    if first != VAULT_1_1_PREFIX {
+        return Err(VaultError::from_kind(ErrorKind::NotAVault));
+    }
+
     let payload = lines
         .filter_map(|i| i.ok())
         .map(|s| s.trim().to_owned())
         .collect::<Vec<String>>()
         .join("");
-
-    if first != VAULT_1_1_PREFIX {
-        return Err(VaultError::from_kind(ErrorKind::NotAVault));
-    }
 
     decrypt(payload.as_bytes(), key)
 }
