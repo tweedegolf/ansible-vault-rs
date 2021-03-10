@@ -10,10 +10,10 @@ keywords = ["ansible", "crypto"]
 categories = ["cryptography", "encoding"]
 
 [dependencies]
-hmac = "0.10.1"
-sha2 = "0.9.3"
-pbkdf2 = "0.7.2"
-aes-ctr = "0.6.0"
-block-padding = "0.2.1"
-hex = "0.4.2"
-rand = "0.8.0"
+hmac = "0.10"
+sha2 = "0.9"
+pbkdf2 = "0.7"
+aes-ctr = "0.6"
+block-padding = "0.2"
+hex = "0.4"
+rand = "0.8"
