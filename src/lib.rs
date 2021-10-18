@@ -174,11 +174,11 @@ pub fn decrypt_vault_from_file<P: AsRef<Path>>(path: P, key: &str) -> Result<Vec
 /// indentation.
 /// ```text
 /// $ANSIBLE_VAULT;1.1;AES256
-///       33666638363066623664653234386231616339646438303933633830376132633330353032393364
-///       3363373531316565663539326661393165323030383934380a366133633066623963303665303238
-///       34633364626339313035633763313034366538363537306265316532663531363632383333353737
-///       3863616362363731660a666161623033666331663937626433313432616266393830376431393665
-///       3965
+/// 33666638363066623664653234386231616339646438303933633830376132633330353032393364
+/// 3363373531316565663539326661393165323030383934380a366133633066623963303665303238
+/// 34633364626339313035633763313034366538363537306265316532663531363632383333353737
+/// 3863616362363731660a666161623033666331663937626433313432616266393830376431393665
+/// 3965
 ///```
 /// # Arguments:
 /// * `input`: a stream to the data to encrypt
@@ -188,7 +188,7 @@ pub fn encrypt_vault<T: Read>(input: T, key: &str) -> Result<String> {
     let ciphertext = encrypt(input, key)?;
     let mut buffer = Vec::new();
     for chunk in ciphertext.into_bytes().chunks(line_length) {
-        let mut line = ["      ".as_bytes(), chunk, "\n".as_bytes()].concat();
+        let mut line = [chunk, "\n".as_bytes()].concat();
         buffer.append(&mut line);
     }
 
@@ -287,4 +287,5 @@ mod tests {
         let decoded_str = String::from_utf8(decoded).unwrap();
         assert_eq!(lipsum, decoded_str);
     }
+
 }
